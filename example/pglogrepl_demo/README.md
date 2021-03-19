@@ -12,6 +12,8 @@ First start `pglogrepl_demo`:
 $ PGLOGREPL_DEMO_CONN_STRING="postgres://pglogrepl:secret@127.0.0.1/pglogrepl?replication=database" go run main.go
 ```
 
+$ PGLOGREPL_DEMO_CONN_STRING="postgres://pglogrepl:secret@0.0.0.0:6432/orders_db?replication=database" go run main.go
+
 Start a `psql` connection in another terminal and run the following:
 
 ```

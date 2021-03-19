@@ -51,5 +51,5 @@ To run the tests set `PGLOGREPL_TEST_CONN_STRING` environment variable with a re
 Example:
 
 ```
-PGLOGREPL_TEST_CONN_STRING=postgres://pglogrepl:secret@127.0.0.1/pglogrepl?replication=database go test
+PGLOGREPL_TEST_CONN_STRING=postgres://:secret@127.0.0.1/pglogrepl?replication=database go test
 ```

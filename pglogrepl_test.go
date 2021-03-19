@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/jackc/pgconn"
-	"github.com/jackc/pglogrepl"
 	"github.com/jackc/pgproto3/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/jackc/pglogrepl"
 )
 
 const slotName = "pglogrepl_test"
@@ -176,19 +177,19 @@ drop table t;
 
 	rxKeepAlive()
 	xld := rxXLogData()
-	assert.Equal(t, "BEGIN", string(xld.WALData[:5]))
+	assert.Equal(t, "BEGIN", string(xld.Data[:5]))
 	xld = rxXLogData()
-	assert.Equal(t, "table public.t: INSERT: id[integer]:1 name[text]:'foo'", string(xld.WALData))
+	assert.Equal(t, "table public.t: INSERT: id[integer]:1 name[text]:'foo'", string(xld.Data))
 	xld = rxXLogData()
-	assert.Equal(t, "table public.t: INSERT: id[integer]:2 name[text]:'bar'", string(xld.WALData))
+	assert.Equal(t, "table public.t: INSERT: id[integer]:2 name[text]:'bar'", string(xld.Data))
 	xld = rxXLogData()
-	assert.Equal(t, "table public.t: INSERT: id[integer]:3 name[text]:'baz'", string(xld.WALData))
+	assert.Equal(t, "table public.t: INSERT: id[integer]:3 name[text]:'baz'", string(xld.Data))
 	xld = rxXLogData()
-	assert.Equal(t, "table public.t: UPDATE: id[integer]:3 name[text]:'quz'", string(xld.WALData))
+	assert.Equal(t, "table public.t: UPDATE: id[integer]:3 name[text]:'quz'", string(xld.Data))
 	xld = rxXLogData()
-	assert.Equal(t, "table public.t: DELETE: id[integer]:2", string(xld.WALData))
+	assert.Equal(t, "table public.t: DELETE: id[integer]:2", string(xld.Data))
 	xld = rxXLogData()
-	assert.Equal(t, "COMMIT", string(xld.WALData[:6]))
+	assert.Equal(t, "COMMIT", string(xld.Data[:6]))
 }
 
 func TestStartReplicationPhysical(t *testing.T) {
@@ -252,7 +253,7 @@ drop table mytable;
 	}
 
 	xld := rxXLogData()
-	assert.Contains(t, string(xld.WALData), "mytable")
+	assert.Contains(t, string(xld.Data), "mytable")
 
 	copyDoneResult, err := pglogrepl.SendStandbyCopyDone(ctx, conn)
 	require.NoError(t, err)

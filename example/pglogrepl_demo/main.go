@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgconn"
-	"github.com/jackc/pglogrepl"
 	"github.com/jackc/pgproto3/v2"
+
+	"github.com/jackc/pglogrepl"
 )
 
 func main() {
@@ -51,7 +52,7 @@ func main() {
 		log.Fatalln("CreateReplicationSlot failed:", err)
 	}
 	log.Println("Created temporary replication slot:", slotName)
-	err = pglogrepl.StartReplication(context.Background(), conn, slotName, sysident.XLogPos, pglogrepl.StartReplicationOptions{PluginArgs: pluginArguments})
+	err = pglogrepl.StartReplication(context.Background(), conn, slotName, sysident.XLogPos, pglogrepl.StartReplicationOptions{PluginArgs: pluginArguments, Mode: pglogrepl.LogicalReplication})
 	if err != nil {
 		log.Fatalln("StartReplication failed:", err)
 	}
@@ -61,13 +62,14 @@ func main() {
 	standbyMessageTimeout := time.Second * 10
 	nextStandbyMessageDeadline := time.Now().Add(standbyMessageTimeout)
 
+	walParser := pglogrepl.NewWalParser()
 	for {
 		if time.Now().After(nextStandbyMessageDeadline) {
 			err = pglogrepl.SendStandbyStatusUpdate(context.Background(), conn, pglogrepl.StandbyStatusUpdate{WALWritePosition: clientXLogPos})
 			if err != nil {
 				log.Fatalln("SendStandbyStatusUpdate failed:", err)
 			}
-			log.Println("Sent Standby status message")
+			//log.Println("Sent Standby status message")
 			nextStandbyMessageDeadline = time.Now().Add(standbyMessageTimeout)
 		}
 
@@ -89,7 +91,7 @@ func main() {
 				if err != nil {
 					log.Fatalln("ParsePrimaryKeepaliveMessage failed:", err)
 				}
-				log.Println("Primary Keepalive Message =>", "ServerWALEnd:", pkm.ServerWALEnd, "ServerTime:", pkm.ServerTime, "ReplyRequested:", pkm.ReplyRequested)
+				//log.Println("Primary Keepalive Message =>", "ServerWALEnd:", pkm.ServerWALEnd, "ServerTime:", pkm.ServerTime, "ReplyRequested:", pkm.ReplyRequested)
 
 				if pkm.ReplyRequested {
 					nextStandbyMessageDeadline = time.Time{}
@@ -100,9 +102,17 @@ func main() {
 				if err != nil {
 					log.Fatalln("ParseXLogData failed:", err)
 				}
-				log.Println("XLogData =>", "WALStart", xld.WALStart, "ServerWALEnd", xld.ServerWALEnd, "ServerTime:", xld.ServerTime, "WALData", string(xld.WALData))
+				//fmt.Println(xld.Data)
+				//log.Println("XLogData =>", "WALStart", xld.WALStart, "ServerWALEnd", xld.ServerWALEnd, "ServerTime:", xld.ServerTime, "WALData", string(xld.Data))
 
-				clientXLogPos = xld.WALStart + pglogrepl.LSN(len(xld.WALData))
+				clientXLogPos = xld.WALStart + pglogrepl.LSN(len(xld.Data))
+
+				walData, err := walParser.Parse(xld)
+				if err != nil {
+					panic(err)
+				}
+
+				log.Println(walData.Value.String())
 			}
 		default:
 			log.Printf("Received unexpected message: %#v\n", msg)

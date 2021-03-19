@@ -303,11 +303,12 @@ func ParsePrimaryKeepaliveMessage(buf []byte) (PrimaryKeepaliveMessage, error) {
 	return pkm, nil
 }
 
+// XLogData ...
 type XLogData struct {
 	WALStart     LSN
 	ServerWALEnd LSN
 	ServerTime   time.Time
-	WALData      []byte
+	Data      []byte
 }
 
 // ParseXLogData parses a XLogData message from the server.
@@ -320,7 +321,7 @@ func ParseXLogData(buf []byte) (XLogData, error) {
 	xld.WALStart = LSN(binary.BigEndian.Uint64(buf))
 	xld.ServerWALEnd = LSN(binary.BigEndian.Uint64(buf[8:]))
 	xld.ServerTime = pgTimeToTime(int64(binary.BigEndian.Uint64(buf[16:])))
-	xld.WALData = buf[24:]
+	xld.Data = buf[24:]
 
 	return xld, nil
 }
